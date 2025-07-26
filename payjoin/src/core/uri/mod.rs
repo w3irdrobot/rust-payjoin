@@ -1,8 +1,11 @@
-use std::borrow::Cow;
+use core::borrow::Cow;
 
 use bitcoin::address::NetworkChecked;
 pub use error::PjParseError;
 use url::Url;
+
+#[cfg(target_arch = "wasm32")]
+use alloc::{self, Box, String, Vec};
 
 #[cfg(feature = "v2")]
 pub(crate) use crate::directory::ShortId;
@@ -40,8 +43,12 @@ pub struct PayjoinExtras {
 }
 
 impl PayjoinExtras {
-    pub fn endpoint(&self) -> &Url { &self.endpoint }
-    pub fn output_substitution(&self) -> OutputSubstitution { self.output_substitution }
+    pub fn endpoint(&self) -> &Url {
+        &self.endpoint
+    }
+    pub fn output_substitution(&self) -> OutputSubstitution {
+        self.output_substitution
+    }
 }
 
 pub type Uri<'a, NetworkValidation> = bitcoin_uri::Uri<'a, NetworkValidation, MaybePayjoinExtras>;
@@ -102,7 +109,7 @@ pub struct DeserializationState {
 impl bitcoin_uri::SerializeParams for &MaybePayjoinExtras {
     type Key = &'static str;
     type Value = String;
-    type Iterator = std::vec::IntoIter<(Self::Key, Self::Value)>;
+    type Iterator = alloc::vec::IntoIter<(Self::Key, Self::Value)>;
 
     fn serialize_params(self) -> Self::Iterator {
         match self {
@@ -115,7 +122,7 @@ impl bitcoin_uri::SerializeParams for &MaybePayjoinExtras {
 impl bitcoin_uri::SerializeParams for &PayjoinExtras {
     type Key = &'static str;
     type Value = String;
-    type Iterator = std::vec::IntoIter<(Self::Key, Self::Value)>;
+    type Iterator = alloc::vec::IntoIter<(Self::Key, Self::Value)>;
 
     fn serialize_params(self) -> Self::Iterator {
         // normalizing to uppercase enables QR alphanumeric mode encoding
@@ -140,13 +147,15 @@ impl bitcoin_uri::SerializeParams for &PayjoinExtras {
 impl bitcoin_uri::de::DeserializationState<'_> for DeserializationState {
     type Value = MaybePayjoinExtras;
 
-    fn is_param_known(&self, param: &str) -> bool { matches!(param, "pj" | "pjos") }
+    fn is_param_known(&self, param: &str) -> bool {
+        matches!(param, "pj" | "pjos")
+    }
 
     fn deserialize_temp(
         &mut self,
         key: &str,
         value: bitcoin_uri::Param<'_>,
-    ) -> std::result::Result<
+    ) -> core::result::Result<
         bitcoin_uri::de::ParamKind,
         <Self::Value as bitcoin_uri::DeserializationError>::Error,
     > {
@@ -181,7 +190,7 @@ impl bitcoin_uri::de::DeserializationState<'_> for DeserializationState {
 
     fn finalize(
         self,
-    ) -> std::result::Result<Self::Value, <Self::Value as bitcoin_uri::DeserializationError>::Error>
+    ) -> core::result::Result<Self::Value, <Self::Value as bitcoin_uri::DeserializationError>::Error>
     {
         match (self.pj, self.pjos) {
             (None, None) => Ok(MaybePayjoinExtras::Unsupported),
@@ -205,7 +214,7 @@ impl bitcoin_uri::de::DeserializationState<'_> for DeserializationState {
 
 #[cfg(test)]
 mod tests {
-    use std::convert::TryFrom;
+    use core::convert::TryFrom;
 
     use bitcoin_uri::SerializeParams;
 
@@ -370,8 +379,9 @@ mod tests {
         let uri = "bitcoin:12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX?pj=https://example.com&pjos=0";
         let parsed = Uri::try_from(uri).unwrap();
         match parsed.extras {
-            MaybePayjoinExtras::Supported(extras) =>
-                assert_eq!(extras.output_substitution, OutputSubstitution::Disabled),
+            MaybePayjoinExtras::Supported(extras) => {
+                assert_eq!(extras.output_substitution, OutputSubstitution::Disabled)
+            }
             _ => panic!("Expected Supported PayjoinExtras"),
         }
 
@@ -379,8 +389,9 @@ mod tests {
         let uri = "bitcoin:12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX?pj=https://example.com&pjos=1";
         let parsed = Uri::try_from(uri).unwrap();
         match parsed.extras {
-            MaybePayjoinExtras::Supported(extras) =>
-                assert_eq!(extras.output_substitution, OutputSubstitution::Enabled),
+            MaybePayjoinExtras::Supported(extras) => {
+                assert_eq!(extras.output_substitution, OutputSubstitution::Enabled)
+            }
             _ => panic!("Expected Supported PayjoinExtras"),
         }
 
@@ -388,8 +399,9 @@ mod tests {
         let uri = "bitcoin:12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX?pj=https://example.com";
         let parsed = Uri::try_from(uri).unwrap();
         match parsed.extras {
-            MaybePayjoinExtras::Supported(extras) =>
-                assert_eq!(extras.output_substitution, OutputSubstitution::Enabled),
+            MaybePayjoinExtras::Supported(extras) => {
+                assert_eq!(extras.output_substitution, OutputSubstitution::Enabled)
+            }
             _ => panic!("Expected Supported PayjoinExtras"),
         }
     }

@@ -1,5 +1,5 @@
-use std::collections::BTreeMap;
-use std::str::FromStr;
+use core::collections::BTreeMap;
+use core::str::FromStr;
 
 use bitcoin::bech32::Hrp;
 use bitcoin::consensus::encode::Decodable;
@@ -16,8 +16,8 @@ pub(crate) trait UrlExt {
     fn set_receiver_pubkey(&mut self, exp: HpkePublicKey);
     fn ohttp(&self) -> Result<OhttpKeys, ParseOhttpKeysParamError>;
     fn set_ohttp(&mut self, ohttp: OhttpKeys);
-    fn exp(&self) -> Result<std::time::SystemTime, ParseExpParamError>;
-    fn set_exp(&mut self, exp: std::time::SystemTime);
+    fn exp(&self) -> Result<core::time::SystemTime, ParseExpParamError>;
+    fn set_exp(&mut self, exp: core::time::SystemTime);
 }
 
 impl UrlExt for Url {
@@ -59,10 +59,12 @@ impl UrlExt for Url {
     }
 
     /// Set the ohttp parameter in the URL fragment
-    fn set_ohttp(&mut self, ohttp: OhttpKeys) { set_param(self, &ohttp.to_string()) }
+    fn set_ohttp(&mut self, ohttp: OhttpKeys) {
+        set_param(self, &ohttp.to_string())
+    }
 
     /// Retrieve the exp parameter from the URL fragment
-    fn exp(&self) -> Result<std::time::SystemTime, ParseExpParamError> {
+    fn exp(&self) -> Result<core::time::SystemTime, ParseExpParamError> {
         let value = get_param(self, "EX1")
             .map_err(ParseExpParamError::InvalidFragment)?
             .ok_or(ParseExpParamError::MissingExp)?;
@@ -77,14 +79,14 @@ impl UrlExt for Url {
 
         u32::consensus_decode(&mut &bytes[..])
             .map(|timestamp| {
-                std::time::UNIX_EPOCH + std::time::Duration::from_secs(timestamp as u64)
+                core::time::UNIX_EPOCH + core::time::Duration::from_secs(timestamp as u64)
             })
             .map_err(ParseExpParamError::InvalidExp)
     }
 
     /// Set the exp parameter in the URL fragment
-    fn set_exp(&mut self, exp: std::time::SystemTime) {
-        let t = match exp.duration_since(std::time::UNIX_EPOCH) {
+    fn set_exp(&mut self, exp: core::time::SystemTime) {
+        let t = match exp.duration_since(core::time::UNIX_EPOCH) {
             Ok(duration) => duration.as_secs().try_into().unwrap(), // TODO Result type instead of Option & unwrap
             Err(_) => 0u32,
         };
@@ -118,12 +120,14 @@ pub(crate) enum ParseFragmentError {
     AmbiguousDelimiter,
 }
 
-impl std::error::Error for ParseFragmentError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> { None }
+impl core::error::Error for ParseFragmentError {
+    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
+        None
+    }
 }
 
-impl std::fmt::Display for ParseFragmentError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for ParseFragmentError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         use ParseFragmentError::*;
 
         match &self {
@@ -224,8 +228,8 @@ pub(crate) enum ParseOhttpKeysParamError {
     InvalidFragment(ParseFragmentError),
 }
 
-impl std::fmt::Display for ParseOhttpKeysParamError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for ParseOhttpKeysParamError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         use ParseOhttpKeysParamError::*;
 
         match &self {
@@ -245,16 +249,17 @@ pub(crate) enum ParseExpParamError {
     InvalidFragment(ParseFragmentError),
 }
 
-impl std::fmt::Display for ParseExpParamError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for ParseExpParamError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         use ParseExpParamError::*;
 
         match &self {
             MissingExp => write!(f, "exp is missing"),
             InvalidHrp(h) => write!(f, "incorrect hrp for exp: {h}"),
             DecodeBech32(d) => write!(f, "exp is not valid bech32: {d}"),
-            InvalidExp(i) =>
-                write!(f, "exp param does not contain a bitcoin consensus encoded u32: {i}"),
+            InvalidExp(i) => {
+                write!(f, "exp param does not contain a bitcoin consensus encoded u32: {i}")
+            }
             InvalidFragment(e) => write!(f, "invalid URL fragment: {e}"),
         }
     }
@@ -269,23 +274,24 @@ pub(crate) enum ParseReceiverPubkeyParamError {
     InvalidFragment(ParseFragmentError),
 }
 
-impl std::fmt::Display for ParseReceiverPubkeyParamError {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+impl core::fmt::Display for ParseReceiverPubkeyParamError {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
         use ParseReceiverPubkeyParamError::*;
 
         match &self {
             MissingPubkey => write!(f, "receiver public key is missing"),
             InvalidHrp(h) => write!(f, "incorrect hrp for receiver key: {h}"),
             DecodeBech32(e) => write!(f, "receiver public is not valid base64: {e}"),
-            InvalidPubkey(e) =>
-                write!(f, "receiver public key does not represent a valid pubkey: {e}"),
+            InvalidPubkey(e) => {
+                write!(f, "receiver public key does not represent a valid pubkey: {e}")
+            }
             InvalidFragment(e) => write!(f, "invalid URL fragment: {e}"),
         }
     }
 }
 
-impl std::error::Error for ParseReceiverPubkeyParamError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+impl core::error::Error for ParseReceiverPubkeyParamError {
+    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
         use ParseReceiverPubkeyParamError::*;
 
         match &self {
@@ -342,7 +348,7 @@ mod tests {
         let mut url = EXAMPLE_URL.clone();
 
         let exp_time =
-            std::time::SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(1720547781);
+            core::time::SystemTime::UNIX_EPOCH + core::time::Duration::from_secs(1720547781);
         url.set_exp(exp_time);
         assert_eq!(url.fragment(), Some("EX1C4UC6ES"));
 

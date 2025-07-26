@@ -1,3 +1,6 @@
+#[cfg(target_arch = "wasm32")]
+use alloc::Box;
+
 use url::Url;
 
 use super::WithReplyKey;

@@ -3,6 +3,8 @@
 #[cfg(feature = "_multiparty")]
 pub(crate) mod merge;
 
+#[cfg(target_arch = "wasm32")]
+use alloc::Box;
 use std::collections::BTreeMap;
 use std::fmt;
 
