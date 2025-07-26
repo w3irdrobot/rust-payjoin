@@ -1,5 +1,7 @@
-use std::ops::{Deref, DerefMut};
-use std::{error, fmt};
+#[cfg(target_arch = "wasm32")]
+use alloc::Vec;
+use core::ops::{Deref, DerefMut};
+use core::{error, fmt};
 
 use bitcoin::bech32::{self, EncodeError};
 use bitcoin::key::constants::UNCOMPRESSED_PUBLIC_KEY_SIZE;
@@ -19,7 +21,7 @@ pub fn ohttp_encapsulate(
     target_resource: &str,
     body: Option<&[u8]>,
 ) -> Result<([u8; ENCAPSULATED_MESSAGE_BYTES], ohttp::ClientResponse), OhttpEncapsulationError> {
-    use std::fmt::Write;
+    use core::fmt::Write;
 
     let ctx = ohttp::ClientRequest::from_config(ohttp_keys)?;
     let url = url::Url::parse(target_resource)?;
@@ -129,7 +131,7 @@ pub fn ohttp_decapsulate(
     ohttp_body: &[u8; ENCAPSULATED_MESSAGE_BYTES],
 ) -> Result<http::Response<Vec<u8>>, OhttpEncapsulationError> {
     let bhttp_body = res_ctx.decapsulate(ohttp_body)?;
-    let mut r = std::io::Cursor::new(bhttp_body);
+    let mut r = core::io::Cursor::new(bhttp_body);
     let m: bhttp::Message = bhttp::Message::read_bhttp(&mut r)?;
     let mut builder = http::Response::builder();
     for field in m.header().iter() {
@@ -247,7 +249,7 @@ impl TryFrom<&[u8]> for OhttpKeys {
     }
 }
 
-impl std::str::FromStr for OhttpKeys {
+impl core::str::FromStr for OhttpKeys {
     type Err = ParseOhttpKeysError;
 
     /// Parses a base64URL-encoded string into OhttpKeys.
@@ -317,8 +319,8 @@ pub enum ParseOhttpKeysError {
     DecodeKeyConfig(ohttp::Error),
 }
 
-impl std::fmt::Display for ParseOhttpKeysError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for ParseOhttpKeysError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             ParseOhttpKeysError::InvalidFormat => write!(f, "Invalid format"),
             ParseOhttpKeysError::InvalidPublicKey => write!(f, "Invalid public key"),
@@ -328,8 +330,8 @@ impl std::fmt::Display for ParseOhttpKeysError {
     }
 }
 
-impl std::error::Error for ParseOhttpKeysError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+impl core::error::Error for ParseOhttpKeysError {
+    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
         match self {
             ParseOhttpKeysError::DecodeBech32(e) => Some(e),
             ParseOhttpKeysError::DecodeKeyConfig(e) => Some(e),
@@ -346,7 +348,7 @@ mod test {
 
     #[test]
     fn test_ohttp_keys_roundtrip() {
-        use std::str::FromStr;
+        use core::str::FromStr;
 
         let keys = OhttpKeys(ohttp::KeyConfig::new(KEY_ID, KEM, Vec::from(SYMMETRIC)).unwrap());
         let serialized = &keys.to_string();

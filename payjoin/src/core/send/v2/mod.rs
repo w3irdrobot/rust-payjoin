@@ -28,6 +28,9 @@
 //! Note: Even fresh requests may be linkable via metadata (e.g. client IP, request timing),
 //! but request reuse makes correlation trivial for the relay.
 
+#[cfg(target_arch = "wasm32")]
+use alloc::Box;
+
 use bitcoin::hashes::{sha256, Hash};
 pub use error::{CreateRequestError, EncapsulationError};
 use error::{InternalCreateRequestError, InternalEncapsulationError};

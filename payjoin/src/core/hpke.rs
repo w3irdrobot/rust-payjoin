@@ -1,5 +1,7 @@
-use std::ops::Deref;
-use std::{error, fmt};
+#[cfg(target_arch = "wasm32")]
+use alloc::Vec;
+use core::ops::Deref;
+use core::{error, fmt};
 
 use bitcoin::key::constants::{ELLSWIFT_ENCODING_SIZE, PUBLIC_KEY_SIZE};
 use bitcoin::secp256k1;
@@ -195,7 +197,7 @@ pub fn decrypt_message_a(
     message_a: &[u8],
     receiver_sk: HpkeSecretKey,
 ) -> Result<(Vec<u8>, HpkePublicKey), HpkeError> {
-    use std::io::{Cursor, Read};
+    use core::io::{Cursor, Read};
 
     let mut cursor = Cursor::new(message_a);
 

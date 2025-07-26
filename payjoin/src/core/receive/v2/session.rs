@@ -1,4 +1,6 @@
-use std::time::SystemTime;
+#[cfg(target_arch = "wasm32")]
+use alloc::Box;
+use core::time::SystemTime;
 
 use serde::{Deserialize, Serialize};
 
@@ -13,8 +15,8 @@ use crate::{ImplementationError, IntoUrl, PjUri, Request};
 #[derive(Debug)]
 pub struct ReplayError(InternalReplayError);
 
-impl std::fmt::Display for ReplayError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for ReplayError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         use InternalReplayError::*;
         match &self.0 {
             SessionExpired(expiry) => write!(f, "Session expired at {expiry:?}"),
@@ -26,7 +28,7 @@ impl std::fmt::Display for ReplayError {
         }
     }
 }
-impl std::error::Error for ReplayError {}
+impl core::error::Error for ReplayError {}
 
 impl From<InternalReplayError> for ReplayError {
     fn from(e: InternalReplayError) -> Self { ReplayError(e) }
@@ -154,7 +156,7 @@ pub enum SessionEvent {
     ProvisionalProposal(v1::ProvisionalProposal),
     PayjoinProposal(v1::PayjoinProposal),
     /// Session is invalid. This is a irrecoverable error. Fallback tx should be broadcasted.
-    /// TODO this should be any error type that is impl std::error and works well with serde, or as a fallback can be formatted as a string
+    /// TODO this should be any error type that is impl core::error and works well with serde, or as a fallback can be formatted as a string
     /// Reason being in some cases we still want to preserve the error b/c we can action on it. For now this is a terminal state and there is nothing to replay and is saved to be displayed.
     /// b/c its a terminal state and there is nothing to replay. So serialization will be lossy and that is fine.
     SessionInvalid(String, Option<JsonReply>),

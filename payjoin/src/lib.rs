@@ -1,4 +1,5 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(target_arch = "wasm32", no_std)]
 
 //! # Payjoin implementation in Rust
 //!
@@ -19,6 +20,10 @@
 
 #[cfg(not(any(feature = "directory", feature = "v1", feature = "v2")))]
 compile_error!("At least one of the features ['directory', 'v1', 'v2'] must be enabled");
+
+#[cfg(target_arch = "wasm32")]
+#[global_allocator]
+static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[cfg(any(feature = "v2", feature = "directory"))]
 pub(crate) mod bech32;
